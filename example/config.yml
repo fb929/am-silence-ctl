@@ -1,0 +1,4 @@
+---
+alertmanager_url: "http://alertmanager:9093"
+role: prod
+group: mygroup
