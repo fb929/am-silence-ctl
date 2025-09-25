@@ -63,7 +63,7 @@ jobs:
               FPM_OPTIONS="--rpm-dist el9"
             ;;
             amazonlinux:2)
-              INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y perl rsync libyaml-devel && yum groupinstall -y 'Development Tools'"
+              INSTALL_REQUIRED_PACKAGES_CMD="yum update -y && yum install -y python3 python3-devel perl rsync && yum groupinstall -y 'Development Tools'"
               FPM_OUTPUT_TYPE=rpm
               FPM_ARCH=${{ matrix.rpm_arch }}
               FPM_OPTIONS="--rpm-dist amzn2"
