@@ -35,6 +35,8 @@ rsync -avP \
 perl -i -pe"s|${CURRENT_DIR}/build/|/|" $(grep -rl "${CURRENT_DIR}/" build/ | grep -v '\.pyc') || exit 1
 
 # bin file link
-cd build && ln -s opt/venv/$PROJECT_NAME/$PROJECT_NAME/am-silence-ctl.py bin/am-silence-ctl
+chmod +x build/opt/venv/$PROJECT_NAME/$PROJECT_NAME/am-silence-ctl.py
+perl -pi -e "if (\$. == 1) { \$_ = \"#\!$CURRENT_DIR/bin/python3\n\" }" build/opt/venv/$PROJECT_NAME/$PROJECT_NAME/am-silence-ctl.py
+cd build && ln -s /opt/venv/$PROJECT_NAME/$PROJECT_NAME/am-silence-ctl.py bin/am-silence-ctl
 
 echo "INFO: $0 ended" 1>&2
