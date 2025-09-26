@@ -11,6 +11,7 @@ export LANG=en_US.UTF-8
 install -d \
     build/ \
     build/etc/$PROJECT_NAME \
+    build/bin/
 
 python3 -m venv build/opt/venv/$PROJECT_NAME/
 source build/opt/venv/$PROJECT_NAME/bin/activate
@@ -32,5 +33,8 @@ rsync -avP \
 
 # fixed venv paths
 perl -i -pe"s|${CURRENT_DIR}/build/|/|" $(grep -rl "${CURRENT_DIR}/" build/ | grep -v '\.pyc') || exit 1
+
+# bin file link
+cd build && ln -s opt/venv/$PROJECT_NAME/$PROJECT_NAME/am-silence-ctl.py bin/am-silence-ctl
 
 echo "INFO: $0 ended" 1>&2
