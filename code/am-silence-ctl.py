@@ -130,7 +130,7 @@ def build_matchers(args: argparse.Namespace, cfg: Dict[str, Any]) -> List[Dict[s
         logger.info("Added matcher group=%s", group_value)
 
     if not matchers:
-        fqdn_value = socket.getfqdn()
+        fqdn_value = cfg.get("fqdn",socket.getfqdn())
         if not fqdn_value:
             logger.error("No matchers provided and FQDN is empty/unknown")
             sys.exit(1)
