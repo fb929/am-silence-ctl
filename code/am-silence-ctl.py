@@ -45,8 +45,21 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _normalize_alertmanager_url(value: Any) -> Optional[str]:
+    """Validate and normalize alertmanager_url; return normalized or None if invalid."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    parsed = urlparse(value)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return value.rstrip("/")
+
 def load_config(path: Optional[str]) -> Dict[str, Any]:
-    """Load config (alertmanager_url, role, group) from YAML."""
+    """
+    Load full YAML config into a dict, shallow-merged over defaults.
+    Only 'alertmanager_url' gets special validation/normalization.
+    Any other keys from YAML are passed through as-is.
+    """
     cfg: Dict[str, Any] = {"alertmanager_url": DEFAULT_AM_URL}
 
     locations = [path] if path else DEFAULT_CONFIG_LOCATIONS
@@ -54,7 +67,7 @@ def load_config(path: Optional[str]) -> Dict[str, Any]:
     try:
         import yaml  # type: ignore
     except Exception:
-        logger.warning("PyYAML not available; using defaults (no role/group, default URL).")
+        logger.warning("PyYAML not available; using defaults only (no config loaded).")
         return cfg
 
     for loc in locations:
@@ -63,26 +76,36 @@ def load_config(path: Optional[str]) -> Dict[str, Any]:
             continue
         try:
             with p.open("r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            am_url = data.get("alertmanager_url")
-            role = data.get("role")
-            group = data.get("group")
-
-            if am_url:
-                parsed = urlparse(am_url)
-                if parsed.scheme and parsed.netloc:
-                    cfg["alertmanager_url"] = am_url.rstrip("/")
-                else:
-                    logger.error("Invalid 'alertmanager_url' in %s: %s (ignored)", p, am_url)
-            if role:
-                cfg["role"] = str(role)
-            if group:
-                cfg["group"] = str(group)
-
-            logger.info("Loaded config from %s", p)
-            break
+                data = yaml.safe_load(f)
         except Exception as e:
             logger.error("Failed to read config %s: %s", p, e)
+            continue
+
+        if data is None:
+            logger.info("Config %s is empty; using defaults.", p)
+            break
+
+        if not isinstance(data, dict):
+            logger.error("Config %s must be a mapping (YAML dict). Got: %r", p, type(data).__name__)
+            break
+
+        # Start with defaults, then overlay the whole YAML as-is
+        merged: Dict[str, Any] = dict(cfg)
+        merged.update(data)
+
+        # Special-case: validate/normalize alertmanager_url if present
+        if "alertmanager_url" in merged:
+            norm = _normalize_alertmanager_url(merged["alertmanager_url"])
+            if norm is None:
+                logger.error("Invalid 'alertmanager_url' in %s: %r (keeping default: %s)",
+                             p, merged["alertmanager_url"], cfg["alertmanager_url"])
+                merged["alertmanager_url"] = cfg["alertmanager_url"]
+            else:
+                merged["alertmanager_url"] = norm
+
+        cfg = merged
+        logger.info("Loaded config from %s", p)
+        break  # stop at first found/parsed config
 
     return cfg
 
