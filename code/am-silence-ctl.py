@@ -7,7 +7,7 @@ Features:
 - `comment` is optional via -c/--comment for creation
 - `-r/--role [VALUE]` flag adds a matcher {"name":"role","value":<role>,"isRegex":false}
    * If VALUE is omitted, use the default from config
-- `-g/--group [VALUE]` flag adds a matcher {"name":"group","value":<group>,"isRegex":false}
+- `-g/--groupname [VALUE]` flag adds a matcher {"name":"groupname","value":<groupname>,"isRegex":false}
    * If VALUE is omitted, use the default from config
 - If `--alertname` is omitted and no other matcher is provided, a matcher
   {"name":"fqdn","value":<socket.getfqdn()>,"isRegex":false} is used by default
@@ -16,7 +16,7 @@ Features:
 - YAML config supports:
     alertmanager_url (string, base URL)
     role (string, optional)
-    group (string, optional)
+    groupname (string, optional)
 """
 
 import os
@@ -140,17 +140,17 @@ def build_matchers(args: argparse.Namespace, cfg: Dict[str, Any]) -> List[Dict[s
         matchers.append({"name": "role", "value": role_value, "isRegex": False})
         logger.info("Added matcher role=%s", role_value)
 
-    # Handle group
-    if args.group is not None:
-        if args.group is True:  # flag used without value
-            group_value = cfg.get("group")
+    # Handle groupname
+    if args.groupname is not None:
+        if args.groupname is True:  # flag used without value
+            groupname_value = cfg.get("groupname")
         else:
-            group_value = args.group
-        if not group_value:
-            logger.error("--group was requested but no value provided (and no config default)")
+            groupname_value = args.groupname
+        if not groupname_value:
+            logger.error("--groupname was requested but no value provided (and no config default)")
             sys.exit(1)
-        matchers.append({"name": "group", "value": group_value, "isRegex": False})
-        logger.info("Added matcher group=%s", group_value)
+        matchers.append({"name": "groupname", "value": groupname_value, "isRegex": False})
+        logger.info("Added matcher groupname=%s", groupname_value)
 
     if not matchers:
         fqdn_value = cfg.get("fqdn",socket.getfqdn())
@@ -267,10 +267,10 @@ def main():
         help="Include 'role' matcher (from config if no value is given, or custom value)"
     )
     parser.add_argument(
-        "-g", "--group",
+        "-g", "--groupname",
         nargs="?",
         const=True,
-        help="Include 'group' matcher (from config if no value is given, or custom value)"
+        help="Include 'groupname' matcher (from config if no value is given, or custom value)"
     )
     parser.add_argument("-d", "--delete", action="store_true", help="Delete mode")
     parser.add_argument("--dry-run", action="store_true", help="Do not call the API; only print what would be done")
